@@ -24,9 +24,14 @@ var fancyURL = function (domain, path) {
 };
 
 var deriveSandboxOrigin = function (unsafe, port) {
-    var url = new URL(unsafe);
-    url.port = port;
-    return url.origin;
+    try {
+        var url = new URL(unsafe);
+        url.port = port;
+        return url.origin;
+    } catch (err) {
+        console.error(err);
+        return url;
+    }
 };
 
 (function () {
@@ -73,17 +78,42 @@ var setHeaders = (function () {
         }
     } else {
         // use the default CSP headers constructed with your domain
-        headers['Content-Security-Policy'] = Default.contentSecurity(Env.httpUnsafeOrigin, Env.httpSafeOrigin);
+        headers['Content-Security-Policy'] = Default.contentSecurity({
+            main: Env.httpUnsafeOrigin,
+            sandbox: Env.httpSafeOrigin,
+        }); // XXX
     }
 
+    var CSP_key = 'Content-Security-Policy';
     const padHeaders = Util.clone(headers);
     if (typeof(config.padContentSecurity) === 'string') {
-        padHeaders['Content-Security-Policy'] = config.padContentSecurity;
+        padHeaders[CSP_key] = config.padContentSecurity;
     } else {
-        padHeaders['Content-Security-Policy'] = Default.padContentSecurity(Env.httpUnsafeOrigin, Env.httpSafeOrigin);
+        padHeaders[CSP_key] = Default.padContentSecurity({
+            main: Env.httpUnsafeOrigin,
+            sandbox: Env.httpSafeOrigin,
+        }); // XXX
     }
+
+    var redressHeaders = Default.contentSecurity({
+        main: Env.httpUnsafeOrigin,
+        sandbox: Env.httpSafeOrigin,
+        noEmbed: true,
+    });
+    redressHeaders = Util.clone(headers);
+    redressHeaders[CSP_key] = redressHeaders[CSP_key].replace('frame-ancestors *', 'frame-ancestors self');
+
     if (Object.keys(headers).length) {
         return function (req, res) {
+            if (/^\/(login|drive|teams|register)\//i.test(req.url)) {
+                console.log("lOGIN");
+                return void applyHeaderMap(res, redressHeaders);
+                applyHeaderMap(res, {
+                    'X-Frame-Options': 'deny', //sameorigin',
+                //   res.setHeader("Content-Security-Policy", "frame-ancestors 'self';")
+                });
+            }
+
             // apply a bunch of cross-origin headers for XLSX export in FF and printing elsewhere
             /*
             applyHeaderMap(res, {

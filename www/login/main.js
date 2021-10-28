@@ -7,9 +7,29 @@ define([
     '/common/common-feedback.js',
     '/common/outer/local-store.js',
     '/common/test.js',
+    '/common/hyperscript.js',
 
     'css!/bower_components/components-font-awesome/css/font-awesome.min.css',
-], function ($, Cryptpad, Login, UI, Realtime, Feedback, LocalStore, Test) {
+], function ($, Cryptpad, Login, UI, Realtime, Feedback, LocalStore, Test, h) {
+
+    //console.log(window.location.href, window.top.location);
+    if (window.top !== window) {
+        console.error("location is nested");
+        document.body.innerHTML = "";
+        document.body.appendChild(h("div", [
+            h('h1', "SOMEBODY MIGHT BE TRYING TO HACK YOUR ACCOUNT ON " + window.location.host),
+            h('p', [
+
+            ]),
+        ]));
+    } else {
+        console.error("location is top");
+    }
+
+
+
+
+
     $(function () {
         var $checkImport = $('#import-recent');
         if (LocalStore.isLoggedIn()) {
@@ -17,7 +37,6 @@ define([
             document.location.href = '/drive/';
             return;
         }
-
         /* Log in UI */
         // deferred execution to avoid unnecessary asset loading
         var loginReady = function (cb) {
