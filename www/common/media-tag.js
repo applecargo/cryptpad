@@ -51,6 +51,7 @@ var factory = function () {
             'audio/mpeg',
             'audio/mp3',
             'audio/ogg',
+          'audio/x-m4a',
           'audio/wav',
           'audio/x-wav',
             'audio/webm',
