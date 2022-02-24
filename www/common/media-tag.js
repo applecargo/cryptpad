@@ -51,10 +51,11 @@ var factory = function () {
             'audio/mpeg',
             'audio/mp3',
             'audio/ogg',
-            'audio/wav',
+          'audio/wav',
+          'audio/x-wav',
             'audio/webm',
             'video/mp4',
-            'video/ogg',
+          //'video/ogg',
             'video/webm',
             'application/pdf',
             //'application/dash+xml', // FIXME?
@@ -82,7 +83,8 @@ var factory = function () {
                     plainText.innerText = e.srcElement.result;
                     cb(void 0, plainText);
                 });
-                reader.readAsText(content);
+              reader.readAsText(new Blob([content])); // quick-fix
+              //reader.readAsText(content); // original
             },
             image: function (metadata, url, content, cfg, cb) {
                 var img = document.createElement('img');
@@ -518,6 +520,14 @@ var factory = function () {
         var s = metadata.type.split('/');
         var type = s[0];
         var extension = s[1];
+
+      //adaption for special case: firefox bug: audio/ogg => video/ogg
+      if (mime == 'video/ogg') {
+        mime = 'audio/ogg'; // let's completely ignore video/ogg
+        type = 'audio';
+        extension = 'ogg';
+      }
+      //console.log(metadata.name, mime);
 
         mediaObject.name = metadata.name;
         if (mime && cfg.allowed.indexOf(mime) !== -1) {
